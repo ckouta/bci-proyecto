@@ -1,0 +1,82 @@
+plugins {
+	id 'org.springframework.boot' version '2.5.6'
+	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+	id 'java'
+	id 'jacoco'
+}
+
+group = 'cl.bci'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '1.8'
+
+repositories {
+	mavenCentral()
+}
+
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	runtimeOnly 'com.h2database:h2'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.security:spring-security-test'
+	implementation 'io.jsonwebtoken:jjwt:0.2'
+	compileOnly 'org.projectlombok:lombok:1.18.20'
+	annotationProcessor 'org.projectlombok:lombok:1.18.20'
+	implementation "io.springfox:springfox-swagger2:2.9.2"
+	implementation "io.springfox:springfox-swagger-ui:2.9.2"
+
+	/* Configuracion de cucumber */
+	testImplementation 'org.mockito:mockito-core:3.11.2'
+	testImplementation 'io.cucumber:cucumber-java:6.10.4'
+	testImplementation 'io.cucumber:cucumber-junit:6.10.4'
+
+	/* Configuracion de spock */
+	implementation "org.codehaus.groovy:groovy:3.0.8"
+	testImplementation "org.spockframework:spock-core:2.0-groovy-3.0"
+	testImplementation "cglib:cglib-nodep:3.3.0"
+}
+
+test {
+	useJUnitPlatform()
+	jvmArgs "-Xms2g", "-Xmx2g", "-XX:+UseConcMarkSweepGC", "-XX:+UseParNewGC", "-XX:+DisableExplicitGC"
+	finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+	reports {
+		xml.required = false
+		csv.required = false
+		html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+	}
+}
+jacoco {
+	toolVersion = "0.8.7"
+	reportsDirectory = layout.buildDirectory.dir('customJacocoReportDir')
+}
+
+configurations {
+	cucumberRuntime {
+		extendsFrom testImplementation
+	}
+}
+
+task cucumberCli() {
+	dependsOn assemble, testClasses
+	doLast {
+		javaexec {
+			main = "io.cucumber.core.cli.Main"
+			classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
+			args = [
+					'--plugin', 'pretty',
+					'--plugin', 'html:target/cucumber-report.html',
+					'--glue', 'com.example.usuarios.steps',
+					'src/test/resources']
+		}
+	}
+}
+
+
+
+
